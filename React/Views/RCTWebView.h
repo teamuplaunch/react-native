@@ -6,16 +6,10 @@
  */
 
 #import <React/RCTView.h>
+#import <React/RCTDefines.h>
+#import <WebKit/WebKit.h>
 
 @class RCTWebView;
-
-/**
- * Special scheme used to pass messages to the injectedJavaScript
- * code without triggering a page load. Usage:
- *
- *   window.location.href = RCTJSNavigationScheme + '://hello'
- */
-extern NSString *const RCTJSNavigationScheme;
 
 @protocol RCTWebViewDelegate <NSObject>
 
@@ -28,19 +22,26 @@ shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
 @interface RCTWebView : RCTView
 
 @property (nonatomic, weak) id<RCTWebViewDelegate> delegate;
-
 @property (nonatomic, copy) NSDictionary *source;
-@property (nonatomic, assign) UIEdgeInsets contentInset;
-@property (nonatomic, assign) BOOL automaticallyAdjustContentInsets;
 @property (nonatomic, assign) BOOL messagingEnabled;
 @property (nonatomic, copy) NSString *injectedJavaScript;
-@property (nonatomic, assign) BOOL scalesPageToFit;
+@property (nonatomic, assign) BOOL scrollEnabled;
+@property (nonatomic, assign) CGFloat decelerationRate;
+@property (nonatomic, assign) BOOL allowsInlineMediaPlayback;
+@property (nonatomic, assign) BOOL bounces;
+@property (nonatomic, assign) BOOL mediaPlaybackRequiresUserAction;
+#if WEBKIT_IOS_10_APIS_AVAILABLE
+@property (nonatomic, assign) WKDataDetectorTypes dataDetectorTypes;
+#endif
+@property (nonatomic, assign) UIEdgeInsets contentInset;
+@property (nonatomic, assign) BOOL automaticallyAdjustContentInsets;
 
++ (void)setClientAuthenticationCredential:(nullable NSURLCredential*)credential;
+- (void)postMessage:(NSString *)message;
+- (void)injectJavaScript:(NSString *)script;
 - (void)goForward;
 - (void)goBack;
 - (void)reload;
 - (void)stopLoading;
-- (void)postMessage:(NSString *)message;
-- (void)injectJavaScript:(NSString *)script;
 
 @end

@@ -8,5 +8,4 @@
 #import <React/RCTViewManager.h>
 
 @interface RCTWebViewManager : RCTViewManager
-
 @end
