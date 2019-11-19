@@ -7,13 +7,11 @@
 
 #import "RCTWebViewManager.h"
 
-#import "RCTBridge.h"
 #import "RCTUIManager.h"
 #import "RCTWebView.h"
-#import "UIView+React.h"
+#import <React/RCTDefines.h>
 
 @interface RCTWebViewManager () <RCTWebViewDelegate>
-
 @end
 
 @implementation RCTWebViewManager
@@ -32,22 +30,60 @@ RCT_EXPORT_MODULE()
 }
 
 RCT_EXPORT_VIEW_PROPERTY(source, NSDictionary)
-RCT_REMAP_VIEW_PROPERTY(bounces, _webView.scrollView.bounces, BOOL)
-RCT_REMAP_VIEW_PROPERTY(scrollEnabled, _webView.scrollView.scrollEnabled, BOOL)
-RCT_REMAP_VIEW_PROPERTY(decelerationRate, _webView.scrollView.decelerationRate, CGFloat)
-RCT_EXPORT_VIEW_PROPERTY(scalesPageToFit, BOOL)
-RCT_EXPORT_VIEW_PROPERTY(messagingEnabled, BOOL)
-RCT_EXPORT_VIEW_PROPERTY(injectedJavaScript, NSString)
-RCT_EXPORT_VIEW_PROPERTY(contentInset, UIEdgeInsets)
-RCT_EXPORT_VIEW_PROPERTY(automaticallyAdjustContentInsets, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(onLoadingStart, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onLoadingFinish, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onLoadingError, RCTDirectEventBlock)
-RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onShouldStartLoadWithRequest, RCTDirectEventBlock)
-RCT_REMAP_VIEW_PROPERTY(allowsInlineMediaPlayback, _webView.allowsInlineMediaPlayback, BOOL)
-RCT_REMAP_VIEW_PROPERTY(mediaPlaybackRequiresUserAction, _webView.mediaPlaybackRequiresUserAction, BOOL)
-RCT_REMAP_VIEW_PROPERTY(dataDetectorTypes, _webView.dataDetectorTypes, UIDataDetectorTypes)
+RCT_EXPORT_VIEW_PROPERTY(injectedJavaScript, NSString)
+RCT_EXPORT_VIEW_PROPERTY(allowsInlineMediaPlayback, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(mediaPlaybackRequiresUserAction, BOOL)
+#if WEBKIT_IOS_10_APIS_AVAILABLE
+RCT_EXPORT_VIEW_PROPERTY(dataDetectorTypes, WKDataDetectorTypes)
+#endif
+RCT_EXPORT_VIEW_PROPERTY(contentInset, UIEdgeInsets)
+RCT_EXPORT_VIEW_PROPERTY(automaticallyAdjustContentInsets, BOOL)
+
+/**
+ * Expose methods to enable messaging the webview.
+ */
+RCT_EXPORT_VIEW_PROPERTY(messagingEnabled, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
+
+RCT_EXPORT_METHOD(postMessage:(nonnull NSNumber *)reactTag message:(NSString *)message)
+{
+  [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RCTWebView *> *viewRegistry) {
+    RCTWebView *view = viewRegistry[reactTag];
+    if (![view isKindOfClass:[RCTWebView class]]) {
+      RCTLogError(@"Invalid view returned from registry, expecting RCTWebView, got: %@", view);
+    } else {
+      [view postMessage:message];
+    }
+  }];
+}
+
+RCT_CUSTOM_VIEW_PROPERTY(bounces, BOOL, RCTWebView) {
+  view.bounces = json == nil ? true : [RCTConvert BOOL: json];
+}
+
+RCT_CUSTOM_VIEW_PROPERTY(scrollEnabled, BOOL, RCTWebView) {
+  view.scrollEnabled = json == nil ? true : [RCTConvert BOOL: json];
+}
+
+RCT_CUSTOM_VIEW_PROPERTY(decelerationRate, CGFloat, RCTWebView) {
+  view.decelerationRate = json == nil ? UIScrollViewDecelerationRateNormal : [RCTConvert CGFloat: json];
+}
+
+RCT_EXPORT_METHOD(injectJavaScript:(nonnull NSNumber *)reactTag script:(NSString *)script)
+{
+  [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RCTWebView *> *viewRegistry) {
+    RCTWebView *view = viewRegistry[reactTag];
+    if (![view isKindOfClass:[RCTWebView class]]) {
+      RCTLogError(@"Invalid view returned from registry, expecting RCTWebView, got: %@", view);
+    } else {
+      [view injectJavaScript:script];
+    }
+  }];
+}
 
 RCT_EXPORT_METHOD(goBack:(nonnull NSNumber *)reactTag)
 {
@@ -97,35 +133,11 @@ RCT_EXPORT_METHOD(stopLoading:(nonnull NSNumber *)reactTag)
   }];
 }
 
-RCT_EXPORT_METHOD(postMessage:(nonnull NSNumber *)reactTag message:(NSString *)message)
-{
-  [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RCTWebView *> *viewRegistry) {
-    RCTWebView *view = viewRegistry[reactTag];
-    if (![view isKindOfClass:[RCTWebView class]]) {
-      RCTLogError(@"Invalid view returned from registry, expecting RCTWebView, got: %@", view);
-    } else {
-      [view postMessage:message];
-    }
-  }];
-}
-
-RCT_EXPORT_METHOD(injectJavaScript:(nonnull NSNumber *)reactTag script:(NSString *)script)
-{
-  [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RCTWebView *> *viewRegistry) {
-    RCTWebView *view = viewRegistry[reactTag];
-    if (![view isKindOfClass:[RCTWebView class]]) {
-      RCTLogError(@"Invalid view returned from registry, expecting RCTWebView, got: %@", view);
-    } else {
-      [view injectJavaScript:script];
-    }
-  }];
-}
-
 #pragma mark - Exported synchronous methods
 
-- (BOOL)webView:(__unused RCTWebView *)webView
+- (BOOL)          webView:(RCTWebView *)webView
 shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
-   withCallback:(RCTDirectEventBlock)callback
+             withCallback:(RCTDirectEventBlock)callback
 {
   _shouldStartLoadLock = [[NSConditionLock alloc] initWithCondition:arc4random()];
   _shouldStartLoad = YES;

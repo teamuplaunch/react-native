@@ -31,7 +31,6 @@ const requireNativeComponent = require('requireNativeComponent');
 const resolveAssetSource = require('resolveAssetSource');
 
 const RCTWebViewManager = require('NativeModules').WebViewManager;
-const RCTWKWebViewManager = require('NativeModules').WKWebViewManager;
 
 const BGWASH = 'rgba(255,255,255,0.8)';
 const RCT_WEBVIEW_REF = 'webview';
@@ -478,7 +477,7 @@ class WebView extends React.Component {
     let viewManager = nativeConfig.viewManager;
 
     if (this.props.useWebKit) {
-      viewManager = viewManager || RCTWKWebViewManager;
+      viewManager = viewManager || RCTWebViewManager;
     } else {
       viewManager = viewManager || RCTWebViewManager;
     }
@@ -525,7 +524,7 @@ class WebView extends React.Component {
     let NativeWebView = nativeConfig.component;
 
     if (this.props.useWebKit) {
-      NativeWebView = NativeWebView || RCTWKWebView;
+      NativeWebView = NativeWebView || RCTWebView;
     } else {
       NativeWebView = NativeWebView || RCTWebView;
     }
@@ -573,7 +572,7 @@ class WebView extends React.Component {
       return UIManager.getViewManagerConfig('RCTWebView').Commands;
     }
 
-    return UIManager.getViewManagerConfig('RCTWKWebView').Commands;
+    return UIManager.getViewManagerConfig('RCTWebView').Commands;
   }
 
   /**
@@ -731,11 +730,6 @@ class WebView extends React.Component {
 
 const RCTWebView = requireNativeComponent(
   'RCTWebView',
-  WebView,
-  WebView.extraNativeComponentConfig,
-);
-const RCTWKWebView = requireNativeComponent(
-  'RCTWKWebView',
   WebView,
   WebView.extraNativeComponentConfig,
 );
